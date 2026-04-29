@@ -1,0 +1,19 @@
+[tool.pytest.ini_options]
+testpaths   = ["tests"]
+asyncio_mode = "auto"
+log_cli      = true
+log_level    = "INFO"
+
+[tool.ruff]
+line-length    = 100
+target-version = "py311"
+select         = ["E", "F", "W", "I", "UP"]
+ignore         = ["E501"]
+
+[tool.black]
+line-length    = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true

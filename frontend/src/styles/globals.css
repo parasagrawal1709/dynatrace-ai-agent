@@ -1,0 +1,91 @@
+/* ── Variables ───────────────────────────────────────────────────────────────── */
+:root {
+  --bg-base:       #080c12;
+  --bg-surface:    #0d1420;
+  --bg-elevated:   #111b2a;
+  --bg-card:       #0f1929;
+
+  --border:        #1d2d45;
+  --border-glow:   #2a4a7a;
+
+  --accent-cyan:   #00d4ff;
+  --accent-green:  #00ff88;
+  --accent-orange: #ff7a00;
+  --accent-red:    #ff3355;
+  --accent-purple: #a855f7;
+  --accent-yellow: #ffd700;
+
+  --text-primary:  #e0eeff;
+  --text-secondary:#7a9cc5;
+  --text-muted:    #3a5070;
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-ui:   'Syne', sans-serif;
+
+  --radius:    6px;
+  --radius-lg: 12px;
+
+  --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.08);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Reset ───────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; }
+
+body {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+#root { height: 100%; display: flex; flex-direction: column; }
+
+/* ── Scrollbars ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border-glow); border-radius: 3px; }
+
+/* ── Utilities ───────────────────────────────────────────────────────────────── */
+.mono { font-family: var(--font-mono); }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 4px; font-size: 11px;
+  font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.05em;
+}
+.badge-healthy  { background: rgba(0,255,136,0.12); color: var(--accent-green); border: 1px solid rgba(0,255,136,0.25); }
+.badge-degraded { background: rgba(255,122,0,0.12);  color: var(--accent-orange); border: 1px solid rgba(255,122,0,0.25); }
+.badge-critical { background: rgba(255,51,85,0.12);  color: var(--accent-red);    border: 1px solid rgba(255,51,85,0.25); }
+.badge-info     { background: rgba(0,212,255,0.10);  color: var(--accent-cyan);   border: 1px solid rgba(0,212,255,0.20); }
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.glow-text { text-shadow: 0 0 12px currentColor; }
+
+/* ── Scanline overlay ────────────────────────────────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}

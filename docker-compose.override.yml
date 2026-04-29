@@ -1,0 +1,34 @@
+# ═══════════════════════════════════════════════════════════════
+#  docker-compose.override.yml
+#  Automatically merged with docker-compose.yml in development.
+#  Enables live-code mounts and hot reload inside containers.
+#  DO NOT use in production — use docker-compose.prod.yml instead.
+# ═══════════════════════════════════════════════════════════════
+
+version: "3.9"
+
+services:
+  backend:
+    # Override CMD to add --reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app          # mount source for hot reload
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+      - DEMO_MODE=${DEMO_MODE:-true}
+
+  frontend:
+    # Run Vite dev server instead of Nginx in dev
+    build:
+      context: ./frontend
+      target: builder          # stop before the Nginx stage
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules      # anonymous volume prevents host overwrite
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8000/ws
