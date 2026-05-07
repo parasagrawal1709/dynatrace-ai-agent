@@ -1414,25 +1414,18 @@ def _slo_compliance_score(
     availability: float,
     target_slo: float = 99.9,
 ) -> float:
-
     gap = max(0, target_slo - availability)
 
-    if gap <= 0.01:
-        return 97.0
+    # Define max gap we care about (same as your last threshold)
+    max_gap = 1.0
 
-    if gap <= 0.05:
-        return 90.0
+    # Clamp gap to max_gap
+    gap = min(gap, max_gap)
 
-    if gap <= 0.1:
-        return 82.0
+    # Map gap → score range [99.5 (best) to 99.0 (worst)]
+    score = 99.5 - (gap / max_gap) * 0.5
 
-    if gap <= 0.5:
-        return 65.0
-
-    if gap <= 1:
-        return 45.0
-
-    return 20.0
+    return round(score, 2)
 
 
 def _error_budget_remaining(
