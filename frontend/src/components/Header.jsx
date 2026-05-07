@@ -31,10 +31,10 @@ export default function Header({ connected, health, anomaly }) {
         </div>
         <div>
           <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: 16, letterSpacing: '-0.02em' }}>
-            DYNATRACE <span style={{ color: 'var(--accent-cyan)' }}>AI</span> AGENT
+            InsightOps <span style={{ color: 'var(--accent-cyan)' }}>AI</span> AGENT
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            powered by Claude
+
           </div>
         </div>
       </div>
