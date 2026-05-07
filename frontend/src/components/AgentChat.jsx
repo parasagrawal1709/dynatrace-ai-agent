@@ -1012,7 +1012,7 @@ export default function AgentChat() {
             letterSpacing: '0.1em',
           }}
         >
-          SRE AI AGENT — CLAUDE
+          SRE AI AGENT
         </span>
 
         <div
