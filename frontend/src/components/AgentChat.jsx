@@ -54,7 +54,7 @@ export default function AgentChat() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: '👋 I\'m your SRE AI Agent. I have live access to your Dynatrace logs, metrics, and active problems.\n\nAsk me anything about your system health, recent errors, or predicted issues.',
+      content: '👋 I\'m your SRE AI Agent. I have live access to your Infrastructure logs, metrics, and active problems.\n\nAsk me anything about your system health, recent errors, or predicted issues.',
     },
   ])
   const [input, setInput] = useState('')
