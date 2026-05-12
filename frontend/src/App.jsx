@@ -25,7 +25,7 @@ const TABS = [
   { id: 'problems', label: 'PROBLEMS',  icon: AlertOctagon   },
   { id: 'analysis', label: 'ANALYSIS',  icon: Brain          },
   { id: 'agent',    label: 'AI AGENT',  icon: MessageSquare  },
-  { id: 'manual',   label: 'PASTE LOGS',icon: ClipboardPaste },
+  { id: 'manual',   label: 'Service Now Integration',icon: BarChart3 },
 ]
 
 export default function App() {

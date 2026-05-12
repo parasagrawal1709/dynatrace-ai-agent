@@ -674,11 +674,11 @@ const fetchIncidents = async () => {
   setError(null)
 
   try {
-    const targetUrl = `${CONFIG.baseUrl}/api/now/table/incident?sysparm_display_value=true&sysparm_limit=100`
+    const targetUrl = `${CONFIG.baseUrl}/api/now/table/incident`
 
     const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
 
-    const res = await fetch(proxyUrl, {
+    const res = await fetch(targetUrl, {
       method: 'GET',
       headers: {
         'Authorization':
