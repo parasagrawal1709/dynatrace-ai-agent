@@ -227,692 +227,757 @@
 // // }
 //
 //
-// import { useState, useEffect } from 'react'
-// import { RefreshCcw, Loader, AlertTriangle } from 'lucide-react'
+// import { useEffect, useState } from 'react'
+// import { Loader, RefreshCw } from 'lucide-react'
 //
-// /* ✅ HARD-CODED CONFIG (DEV ONLY) */
-// const CONFIG = {
-//   baseUrl: 'https://dev388065.service-now.com', // 🔥 replace
-//   username: 'admin',
-//   password: '=uq3nB-HrVH3',
-// }
+// const API_URL = 'http://localhost:8080/incidents'
 //
-// /* ✅ INCIDENT ROW */
+// /* =========================
+//    Incident Row Card
+// ========================= */
 // function IncidentRow({ incident }) {
-//   const color =
-//     incident.severity === 'CRITICAL' || incident.severity === 'HIGH'
-//       ? 'var(--accent-red)'
-//       : incident.severity === 'MEDIUM'
-//       ? 'var(--accent-orange)'
-//       : 'var(--accent-cyan)'
+//   const getColor = () => {
+//     if (incident.priority?.includes('1')) return 'var(--accent-red)'
+//     if (incident.priority?.includes('2')) return 'var(--accent-orange)'
+//     return 'var(--accent-cyan)'
+//   }
+//
+//   const color = getColor()
 //
 //   return (
-//     <div
-//       style={{
-//         padding: '10px 12px',
-//         marginBottom: 8,
-//         background: 'var(--bg-card)',
-//         border: `1px solid ${color}33`,
-//         borderLeft: `3px solid ${color}`,
-//         borderRadius: 6,
-//       }}
-//     >
-//       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-//         <span style={{ fontSize: 12, fontWeight: 600, color }}>
-//           {incident.severity} — {incident.title}
+//     <div style={{
+//       padding: '8px 12px',
+//       marginBottom: 6,
+//       background: 'var(--bg-card)',
+//       border: `1px solid ${color}33`,
+//       borderLeft: `3px solid ${color}`,
+//       borderRadius: 6,
+//     }}>
+//       {/* Top Row */}
+//       <div style={{
+//         display: 'flex',
+//         justifyContent: 'space-between',
+//         marginBottom: 3
+//       }}>
+//         <span style={{
+//           fontSize: 12,
+//           fontWeight: 600,
+//           color
+//         }}>
+//           {incident.number} — {incident.short_description}
 //         </span>
-//         <span
-//           style={{
-//             fontSize: 10,
-//             color: 'var(--text-muted)',
-//             fontFamily: 'var(--font-mono)',
-//           }}
-//         >
-//           {incident.status}
+//
+//         <span style={{
+//           fontSize: 10,
+//           fontFamily: 'var(--font-mono)',
+//           color: 'var(--text-muted)'
+//         }}>
+//           {incident.state}
 //         </span>
 //       </div>
 //
-//       <div
-//         style={{
-//           fontSize: 11,
-//           color: 'var(--text-secondary)',
-//           marginTop: 4,
-//         }}
-//       >
+//       {/* Description */}
+//       <div style={{
+//         fontSize: 11,
+//         color: 'var(--text-secondary)',
+//         marginBottom: 4
+//       }}>
 //         {incident.description}
+//       </div>
+//
+//       {/* Meta */}
+//       <div style={{
+//         display: 'flex',
+//         gap: 10,
+//         fontSize: 10,
+//         fontFamily: 'var(--font-mono)',
+//         color: 'var(--text-muted)'
+//       }}>
+//         <span>Priority: {incident.priority}</span>
+//         <span>Severity: {incident.severity}</span>
+//         <span>Opened: {incident.opened_at}</span>
 //       </div>
 //     </div>
 //   )
 // }
 //
-// /* ✅ MAIN COMPONENT */
-// export default function IncidentDashboard() {
+//
+// /* =========================
+//    Main Component
+// ========================= */
+// export default function IncidentsDashboard() {
 //   const [incidents, setIncidents] = useState([])
-//   const [loading, setLoading] = useState(false)
-//   const [error, setError] = useState(null)
-//   const [severityFilter, setSeverityFilter] = useState('ALL')
-//   const [lastUpdated, setLastUpdated] = useState(null)
+//   const [filtered, setFiltered] = useState([])
+//   const [loading, setLoading] = useState(true)
 //
-//   /* ✅ FETCH FROM SERVICE */
+//   const [stateFilter, setStateFilter] = useState('ALL')
+//   const [priorityFilter, setPriorityFilter] = useState('ALL')
+//   const [search, setSearch] = useState('')
+//
+//   /* =========================
+//      Fetch Data
+//   ========================= */
 //   const fetchIncidents = async () => {
-//     setLoading(true)
-//     setError(null)
-//
 //     try {
-//       const res = await fetch(`${CONFIG.baseUrl}/incidents`, {
-//         method: 'GET',
-//         headers: {
-//           'Content-Type': 'application/json',
-//
-//           // ✅ Basic Auth
-//           Authorization:
-//             'Basic ' +
-//             btoa(`${CONFIG.username}:${CONFIG.password}`),
-//         },
-//       })
-//
-//       if (!res.ok) throw new Error('Failed to fetch incidents')
-//
+//       const res = await fetch(API_URL)
 //       const data = await res.json()
-//
-//       setIncidents(data)
-//       setLastUpdated(new Date())
-//
+//       setIncidents(data.result || [])
+//       setLoading(false)
 //     } catch (e) {
-//       setError(e.message)
-//
-//       // ✅ fallback to fake data if API not working
-//       setIncidents(generateFakeIncidents())
-//     } finally {
+//       console.error(e)
 //       setLoading(false)
 //     }
 //   }
 //
-//   /* ✅ AUTO REFRESH */
+//   /* =========================
+//      Poll every 10s
+//   ========================= */
 //   useEffect(() => {
 //     fetchIncidents()
 //     const interval = setInterval(fetchIncidents, 10000)
 //     return () => clearInterval(interval)
 //   }, [])
 //
-//   /* ✅ FILTER */
-//   const filteredIncidents =
-//     severityFilter === 'ALL'
-//       ? incidents
-//       : incidents.filter(i => i.severity === severityFilter)
+//   /* =========================
+//      Filtering Logic
+//   ========================= */
+//   useEffect(() => {
+//     let data = [...incidents]
+//
+//     if (stateFilter !== 'ALL') {
+//       data = data.filter(i => i.state === stateFilter)
+//     }
+//
+//     if (priorityFilter !== 'ALL') {
+//       data = data.filter(i => i.priority === priorityFilter)
+//     }
+//
+//     if (search) {
+//       data = data.filter(i =>
+//         i.number.toLowerCase().includes(search.toLowerCase()) ||
+//         i.short_description?.toLowerCase().includes(search.toLowerCase())
+//       )
+//     }
+//
+//     // Sort latest first
+//     data.sort((a, b) => new Date(b.opened_at) - new Date(a.opened_at))
+//
+//     setFiltered(data)
+//   }, [incidents, stateFilter, priorityFilter, search])
+//
 //
 //   return (
-//     <div
-//       style={{
-//         display: 'flex',
-//         flexDirection: 'column',
-//         height: '100%',
-//       }}
-//     >
-//       {/* ✅ HEADER */}
-//       <div
-//         style={{
-//           display: 'flex',
-//           alignItems: 'center',
-//           padding: '10px 16px',
-//           borderBottom: '1px solid var(--border)',
-//           background: 'var(--bg-elevated)',
-//           gap: 10,
-//         }}
-//       >
-//         <AlertTriangle size={14} color="var(--accent-purple)" />
+//     <div style={{
+//       display: 'flex',
+//       flexDirection: 'column',
+//       height: '100%',
+//       overflow: 'hidden'
+//     }}>
 //
-//         <span
-//           style={{
-//             fontSize: 11,
-//             fontFamily: 'var(--font-mono)',
-//             color: 'var(--text-muted)',
-//             letterSpacing: '0.1em',
-//           }}
-//         >
+//       {/* =========================
+//          HEADER BAR (same style)
+//       ========================= */}
+//       <div style={{
+//         display: 'flex',
+//         alignItems: 'center',
+//         gap: 10,
+//         padding: '10px 16px',
+//         background: 'var(--bg-elevated)',
+//         borderBottom: '1px solid var(--border)',
+//         flexShrink: 0,
+//       }}>
+//         <span style={{
+//           fontSize: 11,
+//           color: 'var(--text-muted)',
+//           fontFamily: 'var(--font-mono)',
+//           letterSpacing: '0.1em'
+//         }}>
 //           INCIDENT MONITOR
 //         </span>
 //
-//         {/* ✅ FILTER */}
-//         <select
-//           value={severityFilter}
-//           onChange={(e) => setSeverityFilter(e.target.value)}
-//           style={{
-//             ...btnStyle('muted'),
-//             padding: '5px 8px',
-//           }}
-//         >
-//           <option value="ALL">All</option>
-//           <option value="CRITICAL">Critical</option>
-//           <option value="HIGH">High</option>
-//           <option value="MEDIUM">Medium</option>
-//           <option value="LOW">Low</option>
-//         </select>
-//
-//         {/* ✅ COUNT */}
-//         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-//           {filteredIncidents.length} incidents
+//         <span style={{
+//           fontSize: 10,
+//           color: 'var(--text-muted)',
+//           fontFamily: 'var(--font-mono)'
+//         }}>
+//           {filtered.length} items
 //         </span>
 //
-//         {/* ✅ LAST REFRESH */}
-//         {lastUpdated && (
-//           <span
-//             style={{
-//               fontSize: 10,
-//               color: 'var(--text-muted)',
-//               fontFamily: 'var(--font-mono)',
-//             }}
-//           >
-//             Last: {lastUpdated.toLocaleTimeString()}
-//           </span>
-//         )}
+//         {/* RIGHT CONTROLS */}
+//         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
 //
-//         {/* ✅ REFRESH BUTTON */}
-//         <div style={{ marginLeft: 'auto' }}>
-//           <button
-//             onClick={fetchIncidents}
-//             disabled={loading}
-//             style={{
-//               ...btnStyle('purple'),
-//               opacity: loading ? 0.6 : 1,
-//             }}
+//           {/* Search */}
+//           <input
+//             placeholder="Search..."
+//             value={search}
+//             onChange={e => setSearch(e.target.value)}
+//             style={inputStyle}
+//           />
+//
+//           {/* State Filter */}
+//           <select
+//             value={stateFilter}
+//             onChange={e => setStateFilter(e.target.value)}
+//             style={inputStyle}
 //           >
-//             {loading ? (
-//               <>
-//                 <Loader size={10} className="pulse" /> Refreshing…
-//               </>
-//             ) : (
-//               <>
-//                 <RefreshCcw size={10} /> Refresh
-//               </>
-//             )}
+//             <option value="ALL">All States</option>
+//             <option value="New">New</option>
+//             <option value="In Progress">In Progress</option>
+//             <option value="Resolved">Resolved</option>
+//           </select>
+//
+//           {/* Priority Filter */}
+//           <select
+//             value={priorityFilter}
+//             onChange={e => setPriorityFilter(e.target.value)}
+//             style={inputStyle}
+//           >
+//             <option value="ALL">All Priority</option>
+//             <option value="1 - Critical">Critical</option>
+//             <option value="2 - High">High</option>
+//             <option value="3 - Moderate">Moderate</option>
+//           </select>
+//
+//           {/* Refresh */}
+//           <button onClick={fetchIncidents} style={btnStyle}>
+//             <RefreshCw size={12} />
 //           </button>
 //         </div>
 //       </div>
 //
-//       {/* ✅ CONTENT */}
-//       <div
-//         style={{
-//           flex: 1,
-//           overflowY: 'auto',
-//           padding: 16,
-//           background: 'var(--bg-card)',
-//         }}
-//       >
-//         {loading && (
-//           <div style={{ textAlign: 'center', padding: 40 }}>
+//
+//       {/* =========================
+//          LIST AREA
+//       ========================= */}
+//       <div style={{
+//         flex: 1,
+//         overflowY: 'auto',
+//         padding: 16,
+//         background: 'var(--bg-base)'
+//       }}>
+//         {loading ? (
+//           <div style={{
+//             textAlign: 'center',
+//             padding: 40,
+//             color: 'var(--accent-purple)',
+//             fontFamily: 'var(--font-mono)',
+//             fontSize: 12
+//           }}>
 //             <Loader className="pulse" />
 //           </div>
-//         )}
-//
-//         {error && (
-//           <div
-//             style={{
-//               padding: 12,
-//               background: 'rgba(255,51,85,0.1)',
-//               border: '1px solid rgba(255,51,85,0.3)',
-//               borderRadius: 6,
-//               color: 'var(--accent-red)',
-//               fontSize: 12,
-//             }}
-//           >
-//             ⚠ {error} (showing fallback data)
+//         ) : filtered.length === 0 ? (
+//           <div style={{
+//             textAlign: 'center',
+//             padding: 40,
+//             color: 'var(--text-muted)',
+//             fontFamily: 'var(--font-mono)',
+//             fontSize: 12
+//           }}>
+//             No incidents found
 //           </div>
+//         ) : (
+//           filtered.map(i => (
+//             <IncidentRow key={i.sys_id} incident={i} />
+//           ))
 //         )}
-//
-//         {filteredIncidents.map((incident, i) => (
-//           <IncidentRow key={i} incident={incident} />
-//         ))}
 //       </div>
 //     </div>
 //   )
 // }
 //
-// /* ✅ BUTTON STYLE */
-// function btnStyle(accent) {
-//   const colors = {
-//     purple: {
-//       bg: 'rgba(168,85,247,0.12)',
-//       border: 'rgba(168,85,247,0.35)',
-//       color: 'var(--accent-purple)',
-//     },
-//     muted: {
-//       bg: 'var(--bg-card)',
-//       border: 'var(--border)',
-//       color: 'var(--text-muted)',
-//     },
-//   }
 //
-//   const c = colors[accent]
-//
-//   return {
-//     display: 'flex',
-//     alignItems: 'center',
-//     gap: 6,
-//     padding: '6px 12px',
-//     borderRadius: 6,
-//     cursor: 'pointer',
-//     background: c.bg,
-//     border: `1px solid ${c.border}`,
-//     color: c.color,
-//     fontFamily: 'var(--font-mono)',
-//     fontSize: 11,
-//   }
+// /* =========================
+//    Styles (same design tokens)
+// ========================= */
+// const inputStyle = {
+//   background: 'var(--bg-card)',
+//   border: '1px solid var(--border)',
+//   color: 'var(--text-primary)',
+//   fontSize: 11,
+//   padding: '5px 8px',
+//   borderRadius: 4,
+//   fontFamily: 'var(--font-mono)',
 // }
 //
-// /* ✅ FALLBACK MOCK DATA */
-// function generateFakeIncidents() {
-//   return [
-//     {
-//       title: 'Payment outage',
-//       description: 'Connection pool exhausted',
-//       severity: 'CRITICAL',
-//       status: 'OPEN',
-//     },
-//     {
-//       title: 'API latency spike',
-//       description: 'Response > 4.8s',
-//       severity: 'HIGH',
-//       status: 'OPEN',
-//     },
-//     {
-//       title: 'JWT auth failures',
-//       description: 'Invalid signatures detected',
-//       severity: 'MEDIUM',
-//       status: 'INVESTIGATING',
-//     },
-//   ]
+// const btnStyle = {
+//   display: 'flex',
+//   alignItems: 'center',
+//   padding: '5px 10px',
+//   borderRadius: 5,
+//   cursor: 'pointer',
+//   background: 'rgba(0,212,255,0.08)',
+//   border: '1px solid rgba(0,212,255,0.25)',
+//   color: 'var(--accent-cyan)',
 // }
-
-
-import { useState, useEffect } from 'react'
-import { RefreshCcw, Loader, AlertTriangle } from 'lucide-react'
-
-/* ✅ CONFIG — ServiceNow Instance */
-const CONFIG = {
-  baseUrl: 'https://dev388065.service-now.com', // 🔥 change
-  username: 'admin', // 🔥 change
-  password: '=uq3nB-HrVH3', // 🔥 change
-}
-
-/* ✅ INCIDENT ROW — SHOW EVERYTHING */
-function IncidentRow({ incident }) {
-  const severity = incident.priority || incident.severity || 'LOW'
-
-  const color =
-    severity === '1' || severity === 'CRITICAL' || severity === 'HIGH'
-      ? 'var(--accent-red)'
-      : severity === '2' || severity === 'MEDIUM'
-      ? 'var(--accent-orange)'
-      : 'var(--accent-cyan)'
-
-  return (
-    <div
-      style={{
-        padding: '10px 12px',
-        marginBottom: 8,
-        background: 'var(--bg-card)',
-        border: `1px solid ${color}33`,
-        borderLeft: `3px solid ${color}`,
-        borderRadius: 6,
-      }}
-    >
-      {/* ✅ HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color }}>
-          {incident.number} — {incident.short_description}
-        </span>
-
-        <span
-          style={{
-            fontSize: 10,
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--text-muted)',
-          }}
-        >
-          {incident.state}
-        </span>
-      </div>
-
-      {/* ✅ DESCRIPTION */}
-      {incident.description && (
-        <div
-          style={{
-            fontSize: 11,
-            color: 'var(--text-secondary)',
-            marginTop: 4,
-            marginBottom: 6,
-          }}
-        >
-          {incident.description}
-        </div>
-      )}
-
-      {/* ✅ SHOW ALL FIELDS */}
-      <div
-        style={{
-          fontSize: 10,
-          fontFamily: 'var(--font-mono)',
-          marginTop: 4,
-        }}
-      >
-        {Object.entries(incident).map(([key, value]) => {
-          if (
-            key === 'number' ||
-            key === 'short_description' ||
-            key === 'description'
-          )
-            return null
-
-          return (
-            <div
-              key={key}
-              style={{
-                display: 'flex',
-                marginBottom: 2,
-                color: 'var(--text-muted)',
-              }}
-            >
-              <span style={{ minWidth: 130 }}>{key}:</span>
-              <span style={{ color: 'var(--text-secondary)' }}>
-                {value?.display_value || value?.value || String(value)}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ✅ MAIN COMPONENT */
-export default function IncidentDashboard() {
-  const [incidents, setIncidents] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [severityFilter, setSeverityFilter] = useState('ALL')
-  const [lastUpdated, setLastUpdated] = useState(null)
-
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-
-  /* ✅ FETCH INCIDENTS FROM SERVICENOW */
+//
+// import { useEffect, useState } from 'react'
+// import { Loader, RefreshCw } from 'lucide-react'
+//
+// const API_URL = 'http://localhost:8080/incidents'
+//
+// /* =========================
+//    Incident Card
+// ========================= */
+// function IncidentRow({ incident }) {
+//   const color =
+//     incident.priority?.includes('1')
+//       ? '#ff3355'
+//       : incident.priority?.includes('2')
+//       ? '#ff9f40'
+//       : '#00d4ff'
+//
+//   return (
+//     <div
+//       style={{
+//         padding: '10px',
+//         marginBottom: 8,
+//         background: '#1e1e1e',
+//         border: `1px solid ${color}55`,
+//         borderLeft: `4px solid ${color}`,
+//         borderRadius: 6,
+//         color: '#fff',
+//       }}
+//     >
+//       {/* Header */}
+//       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+//         <div style={{ fontSize: 12, fontWeight: 600 }}>
+//           {incident.number} — {incident.short_description}
+//         </div>
+//
+//         <div style={{ fontSize: 10, opacity: 0.7 }}>
+//           {incident.state}
+//         </div>
+//       </div>
+//
+//       {/* Description */}
+//       <div style={{ fontSize: 11, marginTop: 5, opacity: 0.8 }}>
+//         {incident.description}
+//       </div>
+//
+//       {/* Metadata */}
+//       <div style={{ fontSize: 10, marginTop: 6, opacity: 0.6 }}>
+//         Priority: {incident.priority} | Severity: {incident.severity}
+//       </div>
+//     </div>
+//   )
+// }
+//
+// /* =========================
+//    Main Component
+// ========================= */
+// export default function IncidentsDashboard() {
+//   const [incidents, setIncidents] = useState([])
+//   const [loading, setLoading] = useState(true)
+//
+//   const [search, setSearch] = useState('')
+//   const [stateFilter, setStateFilter] = useState('ALL')
+//
+//   /* =========================
+//      Fetch API (FIXED)
+//   ========================= */
 //   const fetchIncidents = async () => {
-//     setLoading(true)
-//     setError(null)
-//
 //     try {
-//       const res = await fetch(
-//         `${CONFIG.baseUrl}/api/now/table/incident?sysparm_limit=100`,
-//         {
-//           method: 'GET',
-//           headers: {
-//             'Content-Type': 'application/json',
-//             Authorization:
-//               'Basic ' +
-//               btoa(`${CONFIG.username}:${CONFIG.password}`),
-//           },
-//         }
-//       )
+//       setLoading(true)
 //
-//       if (!res.ok) throw new Error('ServiceNow fetch failed')
+//       const res = await fetch(API_URL)
+//
+//       if (!res.ok) {
+//         throw new Error(`HTTP status: ${res.status}`)
+//       }
 //
 //       const data = await res.json()
 //
-//       setIncidents(data.result || [])
-//       setLastUpdated(new Date())
+//       console.log('FULL API RESPONSE:', data)
 //
-//     } catch (e) {
-//       setError(e.message)
+//       // ---- Robust parsing ----
+//       let list = []
+//
+//       if (Array.isArray(data)) {
+//         list = data
+//       } else if (Array.isArray(data.result)) {
+//         list = data.result
+//       } else if (Array.isArray(data.incidents)) {
+//         list = data.incidents
+//       } else {
+//         console.warn('Unexpected API format ❗', data)
+//       }
+//
+//       console.log('FINAL INCIDENT LIST:', list)
+//
+//       setIncidents(list)
+//     } catch (err) {
+//       console.error('FETCH ERROR:', err)
+//       setIncidents([])
 //     } finally {
 //       setLoading(false)
 //     }
 //   }
+//
+//   /* =========================
+//      Poll every 10s
+//   ========================= */
+//   useEffect(() => {
+//     fetchIncidents()
+//     const i = setInterval(fetchIncidents, 10000)
+//     return () => clearInterval(i)
+//   }, [])
+//
+//   /* =========================
+//      Filtering
+//   ========================= */
+//   const filtered = incidents.filter((i) => {
+//     if (stateFilter !== 'ALL' && i.state !== stateFilter) return false
+//
+//     if (search) {
+//       const text =
+//         (i.number || '') + (i.short_description || '')
+//       if (!text.toLowerCase().includes(search.toLowerCase())) {
+//         return false
+//       }
+//     }
+//
+//     return true
+//   })
+//
+//   return (
+//     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+//       {/* HEADER */}
+//       <div
+//         style={{
+//           display: 'flex',
+//           alignItems: 'center',
+//           gap: 10,
+//           padding: '10px 16px',
+//           background: '#111',
+//           borderBottom: '1px solid #333',
+//         }}
+//       >
+//         <span style={{ fontSize: 12, color: '#00d4ff' }}>
+//           INCIDENT DASHBOARD
+//         </span>
+//
+//         <span style={{ fontSize: 10, opacity: 0.6 }}>
+//           {filtered.length} items
+//         </span>
+//
+//         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+//           {/* Search */}
+//           <input
+//             placeholder="Search..."
+//             value={search}
+//             onChange={(e) => setSearch(e.target.value)}
+//             style={inputStyle}
+//           />
+//
+//           {/* State filter */}
+//           <select
+//             value={stateFilter}
+//             onChange={(e) => setStateFilter(e.target.value)}
+//             style={inputStyle}
+//           >
+//             <option value="ALL">All</option>
+//             <option value="New">New</option>
+//           </select>
+//
+//           {/* Refresh */}
+//           <button onClick={fetchIncidents} style={btnStyle}>
+//             <RefreshCw size={12} />
+//           </button>
+//         </div>
+//       </div>
+//
+//       {/* LIST */}
+//       <div
+//         style={{
+//           flex: 1,
+//           overflowY: 'auto',
+//           padding: 12,
+//           background: '#0d0d0d',
+//         }}
+//       >
+//         {loading ? (
+//           <Loader />
+//         ) : filtered.length === 0 ? (
+//           <div style={{ color: 'red', padding: 20 }}>
+//             No incidents received 🚨
+//           </div>
+//         ) : (
+//           filtered.map((item) => (
+//             <IncidentRow key={item.sys_id || item.id} incident={item} />
+//           ))
+//         )}
+//       </div>
+//     </div>
+//   )
+// }
+//
+// /* =========================
+//    Styles
+// ========================= */
+// const inputStyle = {
+//   background: '#222',
+//   border: '1px solid #444',
+//   color: '#fff',
+//   fontSize: 11,
+//   padding: '4px 8px',
+//   borderRadius: 4,
+// }
+//
+// const btnStyle = {
+//   padding: '4px 8px',
+//   background: '#00d4ff22',
+//   border: '1px solid #00d4ff55',
+//   color: '#00d4ff',
+//   cursor: 'pointer',
+// }
 
-const fetchIncidents = async () => {
-  setLoading(true)
-  setError(null)
-
-  try {
-    const targetUrl = `${CONFIG.baseUrl}/api/now/table/incident`
-
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
-
-    const res = await fetch(targetUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization':
-          'Basic ' + btoa(`${CONFIG.username}:${CONFIG.password}`),
-        'Accept': 'application/json',
-      },
-    })
-
-    if (!res.ok) throw new Error('Failed to fetch from ServiceNow')
-
-    const data = await res.json()
-
-    setIncidents(data.result || [])
-    setLastUpdated(new Date())
-
-  } catch (e) {
-    setError(e.message)
-  } finally {
-    setLoading(false)
-  }
-}
 
 
+import { useEffect, useState } from 'react'
+import { Loader, RefreshCw } from 'lucide-react'
 
+const API_URL = 'http://localhost:8080/incidents'
 
-  /* ✅ AUTO REFRESH (10s) */
-  useEffect(() => {
-    fetchIncidents()
-    const interval = setInterval(fetchIncidents, 10000)
-    return () => clearInterval(interval)
-  }, [])
-
-  /* ✅ FILTER */
-  const filteredIncidents =
-    severityFilter === 'ALL'
-      ? incidents
-      : incidents.filter(
-          (i) =>
-            i.priority === severityFilter ||
-            i.severity === severityFilter
-        )
-
-  /* ✅ PAGINATION */
-  const totalPages = Math.ceil(filteredIncidents.length / pageSize)
-
-  const paginatedIncidents = filteredIncidents.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  )
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [severityFilter])
+/* =========================
+   Incident Card
+========================= */
+function IncidentRow({ incident }) {
+  const color =
+    incident.priority?.includes('1')
+      ? '#ff3355'
+      : incident.priority?.includes('2')
+      ? '#ff9f40'
+      : '#00d4ff'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* ✅ HEADER */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '10px 16px',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--bg-elevated)',
-          gap: 10,
-        }}
-      >
-        <AlertTriangle size={14} color="var(--accent-purple)" />
-
-        <span
-          style={{
-            fontSize: 11,
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--text-muted)',
-          }}
-        >
-          SERVICENOW INCIDENTS
-        </span>
-
-        {/* ✅ FILTER */}
-        <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
-          style={btnStyle('muted')}
-        >
-          <option value="ALL">All</option>
-          <option value="1">P1</option>
-          <option value="2">P2</option>
-          <option value="3">P3</option>
-          <option value="4">P4</option>
-        </select>
-
-        {/* ✅ COUNT */}
-        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-          {filteredIncidents.length} incidents
-        </span>
-
-        {/* ✅ LAST REFRESH */}
-        {lastUpdated && (
-          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-            Last: {lastUpdated.toLocaleTimeString()}
-          </span>
-        )}
-
-        {/* ✅ REFRESH BUTTON */}
-        <div style={{ marginLeft: 'auto' }}>
-          <button
-            onClick={fetchIncidents}
-            disabled={loading}
-            style={{
-              ...btnStyle('purple'),
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            {loading ? (
-              <>
-                <Loader size={10} /> Refreshing…
-              </>
-            ) : (
-              <>
-                <RefreshCcw size={10} /> Refresh
-              </>
-            )}
-          </button>
+    <div
+      style={{
+        padding: '10px',
+        marginBottom: 8,
+        background: '#1e1e1e',
+        border: `1px solid ${color}55`,
+        borderLeft: `4px solid ${color}`,
+        borderRadius: 6,
+        color: '#fff',
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 12, fontWeight: 600 }}>
+          {incident.number} — {incident.short_description}
+        </div>
+        <div style={{ fontSize: 10, opacity: 0.7 }}>
+          {incident.state}
         </div>
       </div>
 
-      {/* ✅ CONTENT */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: 16,
-          background: 'var(--bg-card)',
-        }}
-      >
-        {loading && (
-          <div style={{ textAlign: 'center', padding: 30 }}>
-            <Loader className="pulse" />
-          </div>
-        )}
+      {/* Description */}
+      <div style={{ fontSize: 11, marginTop: 5, opacity: 0.8 }}>
+        {incident.description}
+      </div>
 
-        {error && (
-          <div
-            style={{
-              padding: 10,
-              background: 'rgba(255,0,0,0.1)',
-              border: '1px solid red',
-              borderRadius: 6,
-              color: 'red',
-              fontSize: 12,
-            }}
-          >
-            ⚠ {error}
-          </div>
-        )}
-
-        {paginatedIncidents.map((incident, i) => (
-          <IncidentRow key={i} incident={incident} />
-        ))}
-
-        {/* ✅ PAGINATION */}
-        <div
-          style={{
-            marginTop: 12,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <span style={{ fontSize: 10 }}>
-            Page {currentPage} / {totalPages || 1}
-          </span>
-
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              style={btnStyle('muted')}
-            >
-              Prev
-            </button>
-
-            <button
-              onClick={() =>
-                setCurrentPage((p) => Math.min(totalPages, p + 1))
-              }
-              style={btnStyle('muted')}
-            >
-              Next
-            </button>
-          </div>
-
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value))
-              setCurrentPage(1)
-            }}
-            style={btnStyle('muted')}
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
-        </div>
+      {/* Important Fields */}
+      <div style={{ fontSize: 10, marginTop: 6, opacity: 0.65 }}>
+        Priority: {incident.priority} | Severity: {incident.severity}
+        <br />
+        Impact: {incident.impact} | Urgency: {incident.urgency}
+        <br />
+        Category: {incident.category}
+        <br />
+        Opened: {incident.opened_at}
       </div>
     </div>
   )
 }
 
-/* ✅ BUTTON STYLE */
-function btnStyle(accent) {
-  const colors = {
-    purple: {
-      bg: 'rgba(168,85,247,0.12)',
-      border: 'rgba(168,85,247,0.35)',
-      color: 'var(--accent-purple)',
-    },
-    muted: {
-      bg: 'var(--bg-card)',
-      border: 'var(--border)',
-      color: 'var(--text-muted)',
-    },
+/* =========================
+   Main Component
+========================= */
+export default function IncidentsDashboard() {
+  const [incidents, setIncidents] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const [search, setSearch] = useState('')
+  const [stateFilter, setStateFilter] = useState('ALL')
+  const [priorityFilter, setPriorityFilter] = useState('ALL')
+  const [severityFilter, setSeverityFilter] = useState('ALL')
+
+  /* =========================
+     Fetch API (MANUAL ONLY)
+  ========================= */
+  const fetchIncidents = async () => {
+    try {
+      setLoading(true)
+
+      const res = await fetch(API_URL)
+
+      if (!res.ok) {
+        throw new Error(`HTTP status: ${res.status}`)
+      }
+
+      const data = await res.json()
+
+      let list = []
+
+      if (Array.isArray(data)) list = data
+      else if (Array.isArray(data.result)) list = data.result
+      else if (Array.isArray(data.incidents)) list = data.incidents
+
+      setIncidents(list)
+    } catch (err) {
+      console.error('FETCH ERROR:', err)
+      setIncidents([])
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const c = colors[accent]
+  /* ✅ Only initial load (NO auto refresh) */
+  useEffect(() => {
+    fetchIncidents()
+  }, [])
 
-  return {
-    padding: '5px 10px',
-    borderRadius: 5,
-    cursor: 'pointer',
-    background: c.bg,
-    border: `1px solid ${c.border}`,
-    color: c.color,
-    fontSize: 11,
-  }
+  /* =========================
+     Filtering
+  ========================= */
+  const filtered = incidents.filter((i) => {
+    if (stateFilter !== 'ALL' && i.state !== stateFilter) return false
+    if (priorityFilter !== 'ALL' && i.priority !== priorityFilter) return false
+    if (severityFilter !== 'ALL' && i.severity !== severityFilter) return false
+
+    if (search) {
+      const text =
+        (i.number || '') +
+        (i.short_description || '') +
+        (i.description || '')
+
+      if (!text.toLowerCase().includes(search.toLowerCase())) {
+        return false
+      }
+    }
+
+    return true
+  })
+
+  /* Dynamic filter values */
+  const states = [...new Set(incidents.map((i) => i.state).filter(Boolean))]
+  const priorities = [...new Set(incidents.map((i) => i.priority).filter(Boolean))]
+  const severities = [...new Set(incidents.map((i) => i.severity).filter(Boolean))]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* HEADER */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '10px 16px',
+          background: '#111',
+          borderBottom: '1px solid #333',
+        }}
+      >
+        <span style={{ fontSize: 12, color: '#00d4ff' }}>
+          INCIDENT DASHBOARD
+        </span>
+
+        <span style={{ fontSize: 10, opacity: 0.6 }}>
+          {filtered.length} items
+        </span>
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          {/* Search */}
+          <input
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={inputStyle}
+          />
+
+          {/* State filter */}
+          <select
+            value={stateFilter}
+            onChange={(e) => setStateFilter(e.target.value)}
+            style={inputStyle}
+          >
+            <option value="ALL">All States</option>
+            {states.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+
+          {/* Priority */}
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            style={inputStyle}
+          >
+            <option value="ALL">All Priority</option>
+            {priorities.map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+
+          {/* Severity */}
+          <select
+            value={severityFilter}
+            onChange={(e) => setSeverityFilter(e.target.value)}
+            style={inputStyle}
+          >
+            <option value="ALL">All Severity</option>
+            {severities.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+
+          {/* ✅ Manual Refresh */}
+          <button onClick={fetchIncidents} style={btnStyle}>
+            <RefreshCw size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* LIST */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: 12,
+          background: '#0d0d0d',
+        }}
+      >
+        {loading ? (
+          <Loader />
+        ) : filtered.length === 0 ? (
+          <div style={{ color: 'red', padding: 20 }}>
+            No incidents received 🚨
+          </div>
+        ) : (
+          filtered.map((item) => (
+            <IncidentRow key={item.sys_id || item.id} incident={item} />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* =========================
+   Styles
+========================= */
+const inputStyle = {
+  background: '#222',
+  border: '1px solid #444',
+  color: '#fff',
+  fontSize: 11,
+  padding: '4px 8px',
+  borderRadius: 4,
+}
+
+const btnStyle = {
+  padding: '4px 8px',
+  background: '#00d4ff22',
+  border: '1px solid #00d4ff55',
+  color: '#00d4ff',
+  cursor: 'pointer',
 }
