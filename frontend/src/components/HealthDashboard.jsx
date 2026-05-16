@@ -131,7 +131,7 @@ export default function HealthDashboard({ liveHealth }) {
           { label: 'OVERALL SCORE', value: `${(health.overall_score ?? 0).toFixed(1)}`, color: 'var(--accent-cyan)' },
           { label: 'ACTIVE PROBLEMS', value: health.active_problems ?? 0, color: health.active_problems > 0 ? 'var(--accent-red)' : 'var(--accent-green)' },
           { label: 'SERVICES', value: services.length, color: 'var(--accent-cyan)' },
-          { label: 'ERRORS (LAST HOUR)', value: health.total_errors_last_hour ?? 0, color: 'var(--accent-orange)' },
+          { label: 'FATAL ERRORS (LAST HOUR)', value: health.total_errors_last_hour ?? 0, color: 'var(--accent-orange)' },
         ].map(({ label, value, color }) => (
           <div key={label} style={{
             background: 'var(--bg-card)', border: '1px solid var(--border)',

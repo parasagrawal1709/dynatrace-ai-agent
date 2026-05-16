@@ -14,6 +14,8 @@ import AnalysisPanel     from './components/AnalysisPanel'
 import AgentChat         from './components/AgentChat'
 import ManualAnalysis    from './components/ManualAnalysis'
 import NotificationToast from './components/NotificationToast'
+import NewIntegration from './components/NewIntegration'
+
 
 import { useWebSocket }     from './hooks/useWebSocket'
 import { useHealthPolling } from './hooks/useHealthPolling'
@@ -26,6 +28,7 @@ const TABS = [
   { id: 'analysis', label: 'ANALYSIS',  icon: Brain          },
   { id: 'agent',    label: 'AI AGENT',  icon: MessageSquare  },
   { id: 'manual',   label: 'Service Now Integration',icon: BarChart3 },
+  { id: 'newTab', label: 'Patches', icon: ClipboardPaste },
 ]
 
 export default function App() {
@@ -108,6 +111,16 @@ export default function App() {
           <div style={{ display: activeTab === 'manual'   ? 'flex' : 'none', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <ManualAnalysis />
           </div>
+
+<div
+  style={{
+    display: activeTab === 'newTab' ? 'flex' : 'none',
+    flex: 'hidden',    flexDirection: 'column',
+  }}
+>
+  <NewIntegration />
+</div>
+
         </div>
       </div>
 

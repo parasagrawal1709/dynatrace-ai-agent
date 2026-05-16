@@ -142,15 +142,15 @@ export default function NotificationToast({ anomalyCheck, aiAnalysis }) {
     }
   }, [aiAnalysis])
 
-  return (
-    <div style={{
-      position: 'fixed', bottom: 20, right: 20,
-      zIndex: 10000,
-      display: 'flex', flexDirection: 'column-reverse',
-    }}>
-      {toasts.map(t => (
-        <Toast key={t.id} {...t} onRemove={removeToast} />
-      ))}
-    </div>
-  )
+//   return (
+//     <div style={{
+//       position: 'fixed', bottom: 20, right: 20,
+//       zIndex: 10000,
+//       display: 'flex', flexDirection: 'column-reverse',
+//     }}>
+//       {toasts.map(t => (
+//         <Toast key={t.id} {...t} onRemove={removeToast} />
+//       ))}
+//     </div>
+//   )
 }

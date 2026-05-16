@@ -48,6 +48,88 @@ DEMO_LOG_TEMPLATES = [
     ("WARN",   "{svc} | Disk usage at 88% on /var/log — consider log rotation"),
     ("ERROR",  "{svc} | Authentication failure — invalid JWT signature from IP 192.168.1.42"),
     ("INFO",   "{svc} | Deployment v2.4.1 completed successfully"),
+
+    # -------------------------
+    # Login issues (auth-service / api-gateway)
+    # -------------------------
+    ("WARN",   "{svc} | Login failed — user locked due to 5 invalid attempts — user=u-1842"),
+    ("ERROR",  "{svc} | OAuth token exchange failed — upstream IdP returned HTTP 502"),
+    ("ERROR",  "{svc} | MFA verification timeout after 30 000 ms — challengeId=ch-7712"),
+    ("WARN",   "{svc} | Suspicious login pattern — 12 attempts from 4 geos in 90s — user=u-1842"),
+    ("ERROR",  "{svc} | Password hash verification error — bcrypt cost mismatch"),
+    ("WARN",   "{svc} | Rate limit exceeded on /login — 429 returned — ip=203.0.113.14"),
+    ("ERROR",  "{svc} | Session store unavailable — Redis connection refused"),
+    ("ERROR",  "{svc} | JWT key rotation mismatch — kid not found — kid=key-2026-04"),
+    ("WARN",   "{svc} | CORS preflight denied — origin not allowed — origin=https://unknown.app"),
+    ("INFO",   "{svc} | User authenticated successfully — method=SSO — user=u-5510"),
+
+    # -------------------------
+    # Transaction timeout & payment failures (payment-service / api-gateway)
+    # -------------------------
+    ("ERROR",  "{svc} | Transaction timeout — exceeded 60 000 ms — txn=tx-993812"),
+    ("WARN",   "{svc} | Idempotency key replay detected — key=idem-7b2f — returning cached result"),
+    ("ERROR",  "{svc} | Payment capture failed — gateway timeout after 45 000 ms — provider=acquirerA"),
+    ("WARN",   "{svc} | Circuit breaker OPEN for payment-gateway — failing fast for 30s"),
+    ("ERROR",  "{svc} | Saga compensation triggered — payment succeeded but inventory reservation failed — order=o-77121"),
+    ("WARN",   "{svc} | Downstream latency spike — p95=8 120 ms — dependency=db-proxy"),
+    ("ERROR",  "{svc} | Duplicate charge prevention triggered — same card+amount within 2 min — txn=tx-88317"),
+    ("INFO",   "{svc} | Payment authorized — authCode=842199 — amount=4 999 INR — user=u-9921"),
+    ("ERROR",  "{svc} | Payment declined — reason=INSUFFICIENT_FUNDS — providerCode=51"),
+    ("WARN",   "{svc} | Async settlement delayed — queue lag 12 480 messages — topic=settlements"),
+
+    # -------------------------
+    # Inventory issues (inventory-service)
+    # -------------------------
+    ("ERROR",  "{svc} | Inventory reservation failed — stock negative for sku=SKU-8821 — requested=3 available=0"),
+    ("WARN",   "{svc} | Inventory cache stale — lastRefresh=18m — serving possibly outdated availability"),
+    ("ERROR",  "{svc} | Deadlock detected in inventory update — transaction rolled back — sku=SKU-9920"),
+    ("WARN",   "{svc} | Reconciliation mismatch — reserved=120 but onHand=95 — sku=SKU-7734"),
+    ("INFO",   "{svc} | Stock updated — sku=SKU-8821 — delta=-2 — newOnHand=48"),
+    ("ERROR",  "{svc} | Warehouse API unreachable — HTTP 504 after 10 000 ms — warehouse=W-03"),
+
+    # -------------------------
+    # Notification issues (notification-service)
+    # -------------------------
+    ("ERROR",  "{svc} | Email provider failure — SMTP 451 temporary local problem — messageId=msg-7712"),
+    ("WARN",   "{svc} | Push notification throttled — provider rate limit — retryIn=60s"),
+    ("ERROR",  "{svc} | SMS send failed — invalid destination number format — user=u-3310"),
+    ("WARN",   "{svc} | Notification queue backlog — 98 220 pending — consumerLag=14m"),
+    ("INFO",   "{svc} | Notification delivered — channel=email — template=order_confirm — user=u-9921"),
+    ("DEBUG",  "{svc} | Deduplication hit — skipping duplicate notification — dedupeKey=order:o-77121"),
+
+    # -------------------------
+    # DB proxy issues (db-proxy)
+    # -------------------------
+    ("ERROR",  "{svc} | Database connection refused — host=db-primary — port=5432"),
+    ("WARN",   "{svc} | Replication lag high — lag=12.4s — switching reads to primary"),
+    ("ERROR",  "{svc} | Too many connections — current=500 max=500 — rejecting new sessions"),
+    ("ERROR",  "{svc} | Slow query detected — duration=9 842 ms — query=UPDATE inventory SET"),
+    ("WARN",   "{svc} | Failover in progress — read-only mode enabled for 120s"),
+    ("INFO",   "{svc} | Connection re-established — pool warm-up completed — size=50"),
+
+    # -------------------------
+    # Risk / Fraud use cases (risk scoring, AML-like checks, velocity checks)
+    # -------------------------
+    ("WARN",   "{svc} | Risk score elevated — score=0.87 threshold=0.75 — action=CHALLENGE — user=u-9921"),
+    ("ERROR",  "{svc} | Risk engine timeout after 7 000 ms — defaulting to SAFE_MODE — txn=tx-993812"),
+    ("WARN",   "{svc} | Velocity check triggered — 6 transactions in 2 minutes — cardHash=ch_91af"),
+    ("ERROR",  "{svc} | Device fingerprint mismatch — newDevice=true — user=u-1842 — action=STEP_UP_AUTH"),
+    ("WARN",   "{svc} | Geo anomaly detected — impossible travel — lastLogin=IN current=US — user=u-1842"),
+    ("ERROR",  "{svc} | Sanctions list check service unavailable — HTTP 503 — action=HOLD — txn=tx-66102"),
+    ("WARN",   "{svc} | Chargeback risk heuristic matched — merchantCategory=MCC_7995 — txn=tx-77310"),
+    ("INFO",   "{svc} | Risk evaluation completed — decision=APPROVE — score=0.22 — txn=tx-11802"),
+    ("ERROR",  "{svc} | AML rule evaluation failed — ruleset compile error — ruleId=aml-velocity-07"),
+    ("WARN",   "{svc} | Manual review queued — reason=HIGH_RISK_SCORE — caseId=case-90812"),
+
+    # -------------------------
+    # API Gateway / edge patterns (timeouts, payload, authz, routing)
+    # -------------------------
+    ("ERROR",  "{svc} | Upstream request timeout — route=/checkout — timeout=10 000 ms — target=payment-service"),
+    ("WARN",   "{svc} | Request payload too large — 413 returned — size=18.2MB — route=/upload"),
+    ("ERROR",  "{svc} | Authorization failure — missing scope=payments:write — user=u-5510"),
+    ("WARN",   "{svc} | Header size exceeded — dropping request — headerBytes=19 240"),
+    ("INFO",   "{svc} | Route updated — /v2/payments now targets payment-service:v2 — rollout=25%"),
+    ("DEBUG",  "{svc} | Trace context propagated — traceId=4bf92f3577b34da6a3ce929d0e0e4736"),
 ]
 
 
