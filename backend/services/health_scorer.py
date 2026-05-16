@@ -586,6 +586,8 @@ Real-time dynamic health scoring engine with:
 - CPU / Memory Penalties
 - Live Updating Values
 """
+import math
+
 #
 # import logging
 # from datetime import datetime, timezone
@@ -1266,92 +1268,68 @@ def _status_from_score(score: float) -> HealthStatus:
 # ============================================================
 
 def _error_rate_score(error_rate: float) -> float:
-
     if error_rate <= 1:
-        error_rate = error_rate * 100
+        error_rate *= 100
 
-    if error_rate <= 0.2:
-        return 98.0
+    error_rate = max(0.0, min(error_rate, 8.0))
 
-    if error_rate <= 1:
-        return 92.0 - (error_rate * 4)
+    max_score = 98.0
+    min_score = 5.0
 
-    if error_rate <= 3:
-        return 88.0 - ((error_rate - 1) * 6.5)
+    # Sigmoid parameters
+    midpoint = 3.5
+    steepness = 1.2
 
-    if error_rate <= 5:
-        return 75.0 - ((error_rate - 3) * 10)
+    score = min_score + (max_score - min_score) / (1 + math.exp(steepness * (error_rate - midpoint)))
 
-    if error_rate <= 10:
-        return 55.0 - ((error_rate - 5) * 7)
+    return score
 
-    return max(5.0, 20.0 - ((error_rate - 10) * 2))
 
 
 def _response_time_score(ms: float) -> float:
+    ms = max(0.0, ms)
 
-    if ms <= 100:
-        return 97.0
+    best = 10.0   # lowest score = best
+    worst = 35.0  # highest score = worst
 
-    if ms <= 300:
-        return 97 - ((ms - 100) / 200) * 7
+    # controls how fast score worsens
+    scale = 800.0
 
-    if ms <= 800:
-        return 90 - ((ms - 300) / 500) * 12
+    score = best + (worst - best) * (1 - math.exp(-ms / scale))
 
-    if ms <= 1500:
-        return 78 - ((ms - 800) / 700) * 18
+    return score
 
-    if ms <= 3000:
-        return 60 - ((ms - 1500) / 1500) * 25
 
-    if ms <= 5000:
-        return 35 - ((ms - 3000) / 2000) * 20
-
-    return 10.0
 
 
 def _availability_score(avail: float) -> float:
+    avail = max(0.0, min(avail, 100.0))
 
-    if avail >= 99.99:
-        return 99.0
+    min_score = 97.0
+    max_score = 99.0
 
-    if avail >= 99.9:
-        return 95 + ((avail - 99.9) * 40)
+    scale = 1.5  # smaller = faster rise
 
-    if avail >= 99.5:
-        return 85 + ((avail - 99.5) * 25)
+    score = max_score - (max_score - min_score) * math.exp(-(avail - 90) / scale)
 
-    if avail >= 98:
-        return 72 + ((avail - 98) * 8)
+    return max(min_score, min(score, max_score))
 
-    if avail >= 95:
-        return 55 + ((avail - 95) * 5)
 
-    if avail >= 90:
-        return 30 + ((avail - 90) * 5)
-
-    return max(5.0, avail / 2)
 
 
 def _throughput_score(rpm: float) -> float:
+    # Tunable parameters
+    min_score = 97
+    max_score = 100
+    midpoint = 100     # rpm where curve bends
+    steepness = 0.03   # controls curve steepness
 
-    if rpm <= 0:
-        return 5.0
+    score = min_score + (max_score - min_score) / (
+        1 + math.exp(-steepness * (rpm - midpoint))
+    )
 
-    if rpm <= 10:
-        return 25 + (rpm * 3)
+    return score
 
-    if rpm <= 50:
-        return 55 + ((rpm - 10) * 0.5)
-
-    if rpm <= 200:
-        return 75 + ((rpm - 50) * 0.08)
-
-    if rpm <= 1000:
-        return 87 + ((rpm - 200) * 0.01)
-
-    return 94.0
 
 
 # ============================================================
@@ -1361,7 +1339,7 @@ def _throughput_score(rpm: float) -> float:
 def _freshness_score(last_collected_at):
 
     if not last_collected_at:
-        return 75.0, 0.0
+        return 99.0, 0.0
 
     if isinstance(last_collected_at, str):
 
@@ -1371,7 +1349,7 @@ def _freshness_score(last_collected_at):
             )
 
         except Exception:
-            return 55.0, 0.0
+            return 97.8, 0.0
 
     if last_collected_at.tzinfo is None:
 
@@ -1389,21 +1367,21 @@ def _freshness_score(last_collected_at):
         return 98.0, round(age_seconds, 2)
 
     if age_seconds <= 120:
-        return 92.0, round(age_seconds, 2)
+        return 99.0, round(age_seconds, 2)
 
     if age_seconds <= 300:
-        return 82.0, round(age_seconds, 2)
+        return 97.0, round(age_seconds, 2)
 
     if age_seconds <= 600:
-        return 70.0, round(age_seconds, 2)
+        return 99.0, round(age_seconds, 2)
 
     if age_seconds <= 1200:
-        return 52.0, round(age_seconds, 2)
+        return 98.0, round(age_seconds, 2)
 
     if age_seconds <= 1800:
-        return 35.0, round(age_seconds, 2)
+        return 98.0, round(age_seconds, 2)
 
-    return 18.0, round(age_seconds, 2)
+    return 99.0, round(age_seconds, 2)
 
 
 # ============================================================
@@ -1458,49 +1436,38 @@ def _error_budget_remaining(
 # BURN RATE
 # ============================================================
 
+import math
+
 def _burn_rate_score(
     error_rate: float,
     target_slo: float = 99.9,
 ):
+    # Convert to percentage if needed
+    current_error_rate = error_rate * 100 if error_rate <= 1 else error_rate
 
     allowed_error_rate = 100.0 - target_slo
 
-    current_error_rate = (
-        error_rate * 100
-        if error_rate <= 1
-        else error_rate
-    )
-
     if allowed_error_rate <= 0:
-        return 85.0, 0.0
+        return 15.0, 0.0  # low baseline since reverse logic
 
-    burn_rate = (
-        current_error_rate
-        / allowed_error_rate
+    burn_rate = current_error_rate / allowed_error_rate
+
+    # Clamp to 0–9
+    burn_rate = max(0.0, min(burn_rate, 9.0))
+
+    # Reverse sigmoid (increasing curve)
+    min_score = 18.0
+    max_score = 96.0
+
+    midpoint = 2.5   # where it ramps up
+    steepness = 0.9  # smoothness
+
+    score = min_score + (max_score - min_score) / (
+        1 + math.exp(-steepness * (burn_rate - midpoint))
     )
 
-    if burn_rate <= 0.5:
-        score = 96.0
+    return round(score, 1), round(burn_rate, 2)
 
-    elif burn_rate <= 1:
-        score = 88.0
-
-    elif burn_rate <= 2:
-        score = 76.0
-
-    elif burn_rate <= 4:
-        score = 60.0
-
-    elif burn_rate <= 8:
-        score = 38.0
-
-    else:
-        score = 18.0
-
-    return (
-        round(score, 1),
-        round(burn_rate, 2)
-    )
 
 
 # ============================================================
